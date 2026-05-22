@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>ProjectForge PR #350 — gap analysis</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 720px; margin: 2em auto; padding: 0 1em; background: #fafafa; color: #222; line-height: 1.7; }
+  a { color: #0366d6; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  h1 { font-size: 1.4em; }
+  h2 { font-size: 1.1em; margin-top: 2em; color: #444; }
+  code { background: #e8e8e8; padding: 1px 5px; border-radius: 3px; font-size: 0.9em; }
+  .code { background: #f0f0f0; padding: 1px 4px; border-radius: 3px; }
+  ul { padding-left: 1.2em; margin: 0.5em 0; }
+  li { margin: 0.35em 0; }
+  .sep { margin: 2em 0; border: none; border-top: 1px solid #ddd; }
+  .note { color: #888; font-size: 0.9em; }
+</style>
+</head>
+<body>
+
+<h1>ProjectForge PR #350 — remaining gaps after <a href="https://github.com/micromata/projectforge/commit/dea46ec2b">dea46ec2b</a></h1>
+
+<p class="note">Noted the Vite migration in <a href="https://github.com/micromata/projectforge/commit/dea46ec2b">dea46ec2b</a> — it overlaps with parts of this PR. I'll rebase onto develop to drop those.</p>
+
+<hr class="sep">
+
+<h2>ESLint 8 → 9</h2>
+<ul>
+  <li><a href="https://github.com/micromata/projectforge/blob/develop/projectforge-webapp/.eslintrc"><code>.eslintrc</code></a> still uses the <a href="https://eslint.org/docs/latest/use/configure/configuration-files">deprecated config format</a> — ESLint&nbsp;9 requires <a href="https://eslint.org/blog/2024/10/eslint-v9.13.0-released/">flat config</a> (<code>eslint.config.js</code>)</li>
+  <li><code>@typescript-eslint/parser</code>&nbsp;v5 → <code>typescript-eslint</code>&nbsp;v8, add <code>@eslint/js</code></li>
+</ul>
+
+<h2>package.json</h2>
+<ul>
+  <li>No <a href="https://github.com/micromata/projectforge/blob/develop/projectforge-webapp/package.json"><code>"type": "module"</code></a> — ESLint&nbsp;9 and its plugins are ESM‑only</li>
+  <li>No <code>overrides</code> for <a href="https://github.com/advisories/GHSA-pxg6-pf52-xh8x"><code>cookie</code> CVE‑2024‑47764</a> — pulled transitively by <code>react-cookies</code> and others</li>
+  <li><code>fetch-mock</code>, <code>react-cookies</code>, <code>redux-mock-store</code> are in <a href="https://github.com/micromata/projectforge/blob/develop/projectforge-webapp/package.json"><code>dependencies</code></a> instead of <code>devDependencies</code></li>
+</ul>
+
+<h2>.npmrc</h2>
+<ul>
+  <li><a href="https://github.com/micromata/projectforge/blob/develop/projectforge-webapp/.npmrc"><code>legacy-peer-deps=true</code></a> is a CRA workaround — <a href="https://docs.npmjs.com/cli/v8/using-npm/config#legacy-peer-deps">no longer needed</a> without react-scripts</li>
+</ul>
+
+<h2>Tests</h2>
+<ul>
+  <li><a href="https://github.com/micromata/projectforge/blob/develop/projectforge-webapp/src/actions/authentication.test.js"><code>authentication.test.js</code> (actions)</a> uses <code>fetch-mock</code>/<code>react-cookies</code> — replace with <code>vi.fn()</code>&nbsp;+&nbsp;<code>global.fetch</code></li>
+  <li><a href="https://github.com/micromata/projectforge/blob/develop/projectforge-webapp/src/reducers/authentication.test.js"><code>authentication.test.js</code> (reducers)</a> asserts <code>loggedIn</code>, but the <a href="https://github.com/micromata/projectforge/blob/develop/projectforge-webapp/src/reducers/authentication.js">reducer</a> already uses <code>user: null</code> — test doesn't match reality</li>
+</ul>
+
+<h2>rest.js</h2>
+<ul>
+  <li><a href="https://github.com/micromata/projectforge/blob/develop/projectforge-webapp/src/utilities/rest.js#L10"><code>import.meta.env.DEV</code></a> alone is not enough — Vitest sets <a href="https://vitest.dev/config/#mode"><code>DEV=true</code> in test mode</a>, so <code>baseURL</code> becomes <code>http://localhost:8080</code> during tests. Needs <code>&amp;&amp; import.meta.env.MODE&nbsp;!==&nbsp;'test'</code></li>
+  <li><code>handleHTTPErrors</code> and <code>evalServiceURL</code> are untested</li>
+</ul>
+
+<hr class="sep">
+
+<p class="note">Will force‑push after rebase.</p>
+
+</body>
+</html>
